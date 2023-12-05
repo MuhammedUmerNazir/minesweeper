@@ -1,7 +1,9 @@
 
-from tkinter import Button, Label
+from tkinter import Button, Label, messagebox
 import random
 import settings
+import platform
+import sys
 
 class Cell:
     all = []
@@ -28,6 +30,7 @@ class Cell:
         btn.bind("<Button-1>", self.left_click_actions)
         btn.bind("<Button-3>", self.right_click_actions)
         self.cell_btn_object = btn
+        # Linux doesn't support SystemButtonFace color therefore storing the original color in orig_color.
         self.orig_color = self.cell_btn_object.cget("background")
 
     @staticmethod
@@ -53,6 +56,22 @@ class Cell:
                 for cell_obj in self.surrounded_cells:
                     cell_obj.show_cell()
             self.show_cell()
+            if Cell.cell_count == settings.MINES_COUNT:
+                if platform.system() == "Windows":
+                    import ctypes
+                    ctypes.windll.user32.MessageBoxW(
+                        0, 'Congratulations! You Won', 'Game Finished', 0
+                    )
+                else:
+                    messagebox.showinfo(
+                        'Game Finished', 'Congratulations! You Won'
+                    )
+                sys.exit()
+        # Here we cancel the further left and right click actions
+        # once the cell is left clicked or in other words the cell
+        # has been opened
+        self.cell_btn_object.unbind("<Button-1>")
+        self.cell_btn_object.unbind("<Button-3>")
 
     @property
     def surrounded_cells(self):
@@ -92,6 +111,12 @@ class Cell:
                     text = f"Cells Left:{Cell.cell_count}"
                 )
 
+            # If this was a mine candidate, then we should
+            # reverse the color of the cell upon clicking.
+            self.cell_btn_object.configure(
+                bg=self.orig_color
+                )
+            
         # Mark the cell as opened
         self.is_opened = True
 
@@ -103,8 +128,19 @@ class Cell:
                 pass
     
     def show_mine(self):
-        # A logic to interupt game and display that the player has lost.
+
         self.cell_btn_object.configure(bg="red")
+
+        if platform.system() == "Windows":
+            import ctypes
+            ctypes.windll.user32.MessageBoxW(
+                0, 'You clicked on a mine', 'Game Over', 0
+            )
+        else:
+            messagebox.showinfo(
+                'Game Over', 'You clicked on a mine'
+            )
+        sys.exit()
 
     def right_click_actions(self, event):
 
